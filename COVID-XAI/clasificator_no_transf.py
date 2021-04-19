@@ -29,7 +29,7 @@ def myquickshift(image,final_shape = (64,64)):
     return segments
 
 transformObject = LIMEImgAug(segmentation_fn=myquickshift, n_hide=4,num_classes=2,final_size=(224,224))
-trainIMG = transformObject.transform
+trainIMG = torchvision.transforms.Lambda(lambda x:transformObject.transform(x,train=False))
 trainTarget = transformObject.target_transform
 testIMG = torchvision.transforms.Lambda(lambda x:transformObject.transform(x,train=False))
 testTarget = transformObject.target_transform
@@ -143,7 +143,7 @@ for epoch in epochs:
             "Running Val Acc":(m/total).cpu().numpy()})
     if best_loss is None or best_loss > last_loss:
         best_loss = last_loss
-        torch.save(clasifier.state_dict(), "./models/clasifier.pt")
+        torch.save(clasifier.state_dict(), "./models/clasifier_no_transf.pt")
         print(f"New best model: val_loss {best_loss}")
 m = 0
 

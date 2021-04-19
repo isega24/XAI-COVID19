@@ -11,6 +11,7 @@ import torchvision
 class COVIDGR(Dataset):
     def __init__(self,data_folder="./data/COVIDGR-09-04/Revised/",
             metadata_file="./data/COVIDGR-09-04/Metadatos.csv",
+            severity="False",
             transform = None):
         self.data_folder = data_folder
         self.metadata_file = metadata_file
@@ -28,12 +29,27 @@ class COVIDGR(Dataset):
                         print(f"Row: {i} ID: {line[0]} Date: {line[1]} File: {data_folder}{filename}.jpg")
 
                     elif line[7] == "PA":
-                        clase = line[6]
-                        if clase in ["VP","FN"]:
-                            clase = [1,0]
-                        elif clase in ["VN","FP"]:
-                            clase = [0,1]
-                        self.dataset.append((f"{filename}.jpg",clase))
+                        if not severity:
+                            clase = line[6]
+                            if clase in ["VP","FN"]:
+                                clase = [1,0]
+                            elif clase in ["VN","FP"]:
+                                clase = [0,1]
+                            self.dataset.append((f"{filename}.jpg",clase))
+                        else:
+                            positivo = line[6] in ["VP","FN"]
+                            if positivo:
+                                clase = line[12]
+                                if clase == "NORMAL":
+                                    clase = [1,0,0,0]
+                                elif clase == "LEVE":
+                                    clase = [0,1,0,0]
+                                elif clase == "MODERADO":
+                                    clase = [0,0,1,0]
+                                elif clase == "GRAVE":
+                                    clase = [0,0,0,1]
+                                self.dataset.append((f"{filename}.jpg",clase))
+
     def __len__(self):
         return len(self.dataset)
     def __getitem__(self,idx):

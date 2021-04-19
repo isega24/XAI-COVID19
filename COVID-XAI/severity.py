@@ -28,14 +28,14 @@ def myquickshift(image,final_shape = (64,64)):
     segments = cv2.resize(segments,initial_shape[0:2],interpolation=cv2.INTER_NEAREST)
     return segments
 
-transformObject = LIMEImgAug(segmentation_fn=myquickshift, n_hide=4,num_classes=2,final_size=(224,224))
+transformObject = LIMEImgAug(segmentation_fn=myquickshift, n_hide=4,num_classes=4,final_size=(224,224))
 trainIMG = transformObject.transform
 trainTarget = transformObject.target_transform
 testIMG = torchvision.transforms.Lambda(lambda x:transformObject.transform(x,train=False))
 testTarget = transformObject.target_transform
 
 
-data = COVIDGR(data_folder="./data/COVIDGR-09-04/Revised-croped/")
+data = COVIDGR(data_folder="./data/COVIDGR-09-04/Revised-croped/",severity=True)
 train, test = random_split(data,lengths=[int(len(data)*0.8),len(data)-int(len(data)*0.8)],
     generator=torch.Generator().manual_seed(SEED))#train_test_split(data,stratify=True,test_size=0.2,random_state=SEED)
 
@@ -43,8 +43,6 @@ trainTransform = lambda x: (trainIMG(x[0]),trainTarget(x[1]))
 testTransform = lambda x: (testIMG(x[0]),testTarget(x[1]))
 
 def before(sample):
-    #import matplotlib.pyplot as plt
-    #plt.imsave("Original.jpg",sample[0][0],cmap="gray")
     imagen = torch.unsqueeze(torch.Tensor(sample[0][0]),dim=-1)
     imagen = imagen.repeat((1,1,3))
     imagen = imagen.double()
@@ -53,9 +51,6 @@ def before(sample):
 
 def after(sample):
     imagen = torch.Tensor(sample[0][0:1,:,:])
-    #import matplotlib.pyplot as plt
-    #plt.imsave("Ocluded.jpg",imagen[0],cmap="gray")
-    #exit()
     return (imagen,sample[1])
 
 
@@ -71,10 +66,26 @@ batch_size = 16
 TrainLoader = DataLoader(train,batch_size=batch_size,shuffle=True)
 TestLoader = DataLoader(test,batch_size=batch_size,shuffle=False)
 
-clasifier = EfficientNet.from_pretrained("efficientnet-b0",num_classes=2,in_channels=1)
+clasifier = EfficientNet.from_pretrained("efficientnet-b0",num_classes=4,in_channels=1)
 clasifier.to(device)
 def criterion_classification(ypred,y_label):
-    return F.cross_entropy(ypred,torch.argmax(y_label,1))
+
+    ypred = torch.sigmoid(ypred)
+    clase = torch.argmax(y_label,axis=-1)
+
+    indexes = torch.arange(0,len(y_label[0]))
+    indexes = indexes.unsqueeze(0).repeat((len(ypred),1))
+    clase = clase.unsqueeze(-1).repeat((1,len(y_label[0])))
+    
+    condition = indexes.to(device) <= clase.to(device)
+    y_label = torch.where(condition,1,0)
+
+    y_label = y_label.type(torch.FloatTensor).to(device)
+    
+
+    #y_label = torch.where(clase >  ,0,1)
+    
+    return F.mse_loss(ypred,y_label)
 
 if len(sys.argv) == 1:
     epochsC = 100
@@ -143,7 +154,7 @@ for epoch in epochs:
             "Running Val Acc":(m/total).cpu().numpy()})
     if best_loss is None or best_loss > last_loss:
         best_loss = last_loss
-        torch.save(clasifier.state_dict(), "./models/clasifier.pt")
+        torch.save(clasifier.state_dict(), "./models/clasifier_ordinal.pt")
         print(f"New best model: val_loss {best_loss}")
 m = 0
 
