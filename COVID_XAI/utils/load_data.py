@@ -1,9 +1,7 @@
 import os
 import torch
 from skimage import io
-import sys
-from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms, utils
+from torch.utils.data import Dataset
 import numpy as np
 import torchvision
 
@@ -41,14 +39,16 @@ class COVIDGR(Dataset):
                             if positivo:
                                 clase = line[12]
                                 if clase == "NORMAL":
-                                    clase = [1,0,0,0]
+                                    clase = [0,1,0,0,0]
                                 elif clase == "LEVE":
-                                    clase = [0,1,0,0]
+                                    clase = [0,0,1,0,0]
                                 elif clase == "MODERADO":
-                                    clase = [0,0,1,0]
+                                    clase = [0,0,0,1,0]
                                 elif clase == "GRAVE":
-                                    clase = [0,0,0,1]
-                                self.dataset.append((f"{filename}.jpg",clase))
+                                    clase = [0,0,0,0,1]
+                            else:
+                                clase = [1,0,0,0,0]
+                            self.dataset.append((f"{filename}.jpg",clase))
 
     def __len__(self):
         return len(self.dataset)
@@ -63,6 +63,7 @@ class COVIDGR(Dataset):
 
         if self.transform:
             sample = self.transform(sample)
+        
         return sample
 
     def _default_transform(self,sample):
