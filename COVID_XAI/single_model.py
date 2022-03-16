@@ -74,8 +74,9 @@ elif args.model == "vgg":
 else:
     print("No model specified")
     exit()
-    
-model = Model(args.name,num_classes=num_classes,ModelConstructor=ModelConstructor)
+from efficientnet_pytorch import EfficientNet
+model = EfficientNet.from_name(args.name,num_classes=num_classes)
+#model = Model(args.name,num_classes=num_classes,ModelConstructor=ModelConstructor)
 
 name = args.mode+"_"+args.model+"_"+str(args.seed)
 

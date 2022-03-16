@@ -24,10 +24,11 @@ def train(model, train_loader, optimizer,loss,criterion, device):
     correct = 0
     processed = 0
     total_loss = 0
-    
+    total_0 = 0
     for batch_index, (data, target) in enumerate(dataloader):
-        
         data, target = data.to(device), target.to(device)
+        
+        
         data = data.float()
         optimizer.zero_grad()
         # Forward pass: compute predicted outputs by passing inputs to the model

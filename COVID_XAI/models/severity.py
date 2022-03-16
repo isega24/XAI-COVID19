@@ -10,13 +10,17 @@ def SeverityModel(name,num_classes,ModelConstructor=EfficientNet):
     for param in model.parameters():
         param.requires_grad = False
     # Add new layers with a softmax activation
+    
+    
+    
     in_features = model._fc.in_features
-    model._fc = torch.nn.Sequential(
-        torch.nn.Linear(in_features, in_features/3),       # Add a linear layer
+    model.fc = torch.nn.Sequential(
+        torch.nn.Linear(in_features, int(in_features/3)),       # Add a linear layer
         torch.nn.ReLU(),
-        torch.nn.Linear(in_features/3, num_classes),       # Add a linear layer
+        torch.nn.Linear(int(in_features/3), num_classes),       # Add a linear layer
         torch.nn.Softmax(dim=1)               # Add a softmax activation
     )
+    
     return model
 
 def SeverityLoss(pred, target):
