@@ -1,17 +1,9 @@
-import sys
-import cv2
 import torch
 import os
-torch.set_num_threads(3)
+torch.set_num_threads(4)
 import torch.nn.functional as F
-import torch.optim as optim
 import tqdm
-import torchvision
-from torch.utils.data.dataloader import DataLoader
-from torch.utils.data import random_split
-from Damax.DAMAX.damax import DamaxAug
-from skimage.segmentation import quickshift
-import numpy as np
+
 
 
 def train(model, train_loader, optimizer,loss,criterion, device):
@@ -27,6 +19,13 @@ def train(model, train_loader, optimizer,loss,criterion, device):
     total_0 = 0
     for batch_index, (data, target) in enumerate(dataloader):
         data, target = data.to(device), target.to(device)
+        '''
+        from matplotlib import pyplot as plt
+        plt.imshow(data[0][0], cmap='gray')
+        print(target[0])
+        plt.show()
+        exit()
+        '''
         
         
         data = data.float()

@@ -8,15 +8,14 @@ class Monotonic(torch.nn.Module):
         super(Monotonic, self).__init__()
         self.feature_extractor = ModelConstructor.from_pretrained(name,num_classes=num_classes)
         # Freeze al parameters
-        self.feature_extractor.eval()
+        self.feature_extractor.freeze()
         # Add new layers with a softmax activation
         in_features = self.feature_extractor._fc.in_features
         self.max_pool = torch.nn.AdaptiveMaxPool2d(1)
         self.fc = torch.nn.Sequential(
             torch.nn.Linear(in_features, int(in_features/3)),       # Add a linear layer
             torch.nn.ReLU(),
-            torch.nn.Linear(int(in_features/3), num_classes),
-            torch.nn.Sigmoid()               # Add a softmax activation
+            torch.nn.Linear(int(in_features/3), num_classes)
         )
         
     def forward(self,x):
